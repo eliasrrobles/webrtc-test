@@ -46,76 +46,99 @@ export default function App() {
 
 
     useEffect(() => {
+        peer.ontrack =
+            event => {
 
 
-        peer.ontrack = event => {
+                console.log(
+                    "track remoto:",
+                    event.track.kind
+                );
 
 
-            if (event.track.kind === "audio") {
+                if (
+                    event.track.kind === "audio"
+                ) {
 
-                remoteAudio.current.srcObject =
-                    event.streams[0];
+                    remoteAudio.current.srcObject =
+                        event.streams[0];
 
-            }
-
-
-            if (event.track.kind === "video") {
-
-                remoteVideo.current.srcObject =
-                    event.streams[0];
-
-            }
-
-        };
+                }
 
 
 
+                if (
+                    event.track.kind === "video"
+                ) {
+
+                    remoteVideo.current.srcObject =
+                        event.streams[0];
+
+                }
 
 
-        peer.onicecandidate = event => {
+            };
 
-            if (event.candidate) {
+
+
+
+
+
+        peer.onicecandidate =
+            event => {
+
+
+                if (event.candidate) {
+
+                    socket.emit(
+                        "ice-candidate",
+                        {
+                            room: ROOM,
+                            candidate: event.candidate
+                        }
+                    );
+
+                }
+
+            };
+
+
+
+
+
+
+
+        peer.onnegotiationneeded =
+            async () => {
+
+
+                console.log(
+                    "renegociando"
+                );
+
+
+
+                const offer =
+                    await peer.createOffer();
+
+
+
+                await peer.setLocalDescription(
+                    offer
+                );
+
+
 
                 socket.emit(
-                    "ice-candidate",
+                    "offer",
                     {
                         room: ROOM,
-                        candidate: event.candidate
+                        offer
                     }
                 );
 
-            }
+            };
 
-        };
-
-
-
-
-
-
-
-        peer.onnegotiationneeded = async () => {
-
-
-            const offer =
-                await peer.createOffer();
-
-
-            await peer.setLocalDescription(
-                offer
-            );
-
-
-            socket.emit(
-                "offer",
-                {
-                    room: ROOM,
-                    offer
-                }
-            );
-
-
-        };
 
 
 
@@ -139,9 +162,11 @@ export default function App() {
                     await peer.createOffer();
 
 
+
                 await peer.setLocalDescription(
                     offer
                 );
+
 
 
                 socket.emit(
@@ -152,9 +177,9 @@ export default function App() {
                     }
                 );
 
+
             }
         );
-
 
 
 
@@ -171,13 +196,16 @@ export default function App() {
                 );
 
 
+
                 const answer =
                     await peer.createAnswer();
+
 
 
                 await peer.setLocalDescription(
                     answer
                 );
+
 
 
                 socket.emit(
@@ -188,8 +216,10 @@ export default function App() {
                     }
                 );
 
+
             }
         );
+
 
 
 
@@ -217,17 +247,20 @@ export default function App() {
             "ice-candidate",
             async candidate => {
 
+
                 try {
 
                     await peer.addIceCandidate(
                         candidate
                     );
 
-                } catch(e) {
+
+                } catch (e) {
 
                     console.log(e);
 
                 }
+
 
             }
         );
@@ -251,22 +284,24 @@ export default function App() {
     async function start() {
 
 
+
         const stream =
             await navigator.mediaDevices
                 .getUserMedia({
 
                     audio: {
 
-                        echoCancellation:true,
-                        noiseSuppression:true,
-                        autoGainControl:true
+                        echoCancellation: true,
+
+                        noiseSuppression: true,
+
+                        autoGainControl: true
 
                     },
 
-                    video:false
+                    video: false
 
                 });
-
 
 
 
@@ -281,12 +316,15 @@ export default function App() {
         stream.getTracks()
             .forEach(track => {
 
+
                 peer.addTrack(
                     track,
                     stream
                 );
 
+
             });
+
 
     }
 
@@ -306,29 +344,35 @@ export default function App() {
             await navigator.mediaDevices
                 .getDisplayMedia({
 
+
                     video: {
 
                         width: {
-                            ideal:1920,
-                            max:1920
+                            ideal: 1920
                         },
 
-                        height:{
-                            ideal:1080,
-                            max:1080
+
+                        height: {
+                            ideal: 1080
                         },
 
-                        frameRate:{
-                            ideal:30,
-                            max:30
+
+                        frameRate: {
+
+                            ideal: 200,
+
+                            max: 200
+
                         }
+
 
                     },
 
-                    audio:false
+
+                    audio: true
+
 
                 });
-
 
 
 
@@ -347,12 +391,17 @@ export default function App() {
 
 
 
+        screen.getTracks()
+            .forEach(track => {
 
 
-        peer.addTrack(
-            videoTrack,
-            screen
-        );
+                peer.addTrack(
+                    track,
+                    screen
+                );
+
+
+            });
 
 
 
@@ -368,23 +417,22 @@ export default function App() {
                 );
 
 
-
-
-        if(sender){
-
+        if (sender) {
 
             const params =
                 sender.getParameters();
 
 
+            params.encodings =
+                params.encodings.map(enc => ({
 
-            params.encodings = [
-                {
-                    maxBitrate:5000000,
-                    maxFramerate:30
-                }
-            ];
+                    ...enc,
 
+                    maxFramerate: 200,
+
+                    maxBitrate: 600000000
+
+                }));
 
 
             try {
@@ -393,12 +441,11 @@ export default function App() {
                     params
                 );
 
-
-            } catch(e){
+            } catch (err) {
 
                 console.log(
-                    "setParameters error",
-                    e
+                    "No se pudo aplicar bitrate/fps:",
+                    err
                 );
 
             }
@@ -420,7 +467,7 @@ export default function App() {
 
             ...old,
 
-            capture:{
+            capture: {
 
                 fps:
                     Math.round(
@@ -448,153 +495,203 @@ export default function App() {
 
 
 
+    function startStats() {
 
-    function startStats(){
 
 
-        let lastSendBytes = 0;
-        let lastRecvBytes = 0;
+        let lastSend = 0;
+        let lastRecv = 0;
+
 
         let lastTime =
-            performance.now();
+            Date.now();
 
 
 
 
-        setInterval(async()=>{
+        setInterval(
+            async () => {
 
 
-            const reports =
-                await peer.getStats();
+                const reports =
+                    await peer.getStats();
 
 
 
 
-            let send={
-                bitrate:0,
-                fps:0,
-                lost:0
-            };
+                let send = {
 
+                    bitrate: 0,
+                    fps: 0,
+                    lost: 0
 
-            let recv={
-                bitrate:0,
-                fps:0,
-                lost:0
-            };
+                };
 
 
+                let recv = {
 
+                    bitrate: 0,
+                    fps: 0,
+                    lost: 0
 
-            const now =
-                performance.now();
+                };
 
 
-            const seconds =
-                (now-lastTime)/1000;
 
 
 
 
+                reports.forEach(report => {
 
 
-            reports.forEach(r=>{
 
 
 
-                if(
-                    r.type==="outbound-rtp" &&
-                    r.kind==="video"
-                ){
+                    if (
+                        report.type === "outbound-rtp"
+                        &&
+                        report.kind === "video"
+                    ) {
 
 
-                    send.bitrate =
-                        Math.round(
-                            ((r.bytesSent-lastSendBytes)*8)
-                            /
-                            seconds
-                            /
-                            1000
-                        );
 
+                        const now =
+                            Date.now();
 
-                    send.fps =
-                        Math.round(
-                            r.framesPerSecond || 0
-                        );
 
+                        const seconds =
+                            (
+                                now - lastTime
+                            ) / 1000;
 
-                    send.lost =
-                        r.packetsLost || 0;
 
 
+                        send.bitrate =
+                            Math.round(
+                                (
+                                    (
+                                        report.bytesSent - lastSend
+                                    )
+                                    * 8
+                                )
+                                /
+                                seconds
+                                /
+                                1000
+                            );
 
-                    lastSendBytes =
-                        r.bytesSent;
 
-                }
 
+                        send.fps =
+                            Math.round(
+                                report.framesPerSecond || 0
+                            );
 
 
 
+                        send.lost =
+                            report.packetsLost || 0;
 
 
-                if(
-                    r.type==="inbound-rtp" &&
-                    r.kind==="video"
-                ){
 
+                        lastSend =
+                            report.bytesSent;
 
-                    recv.bitrate =
-                        Math.round(
-                            ((r.bytesReceived-lastRecvBytes)*8)
-                            /
-                            seconds
-                            /
-                            1000
-                        );
 
+                    }
 
-                    recv.fps =
-                        Math.round(
-                            r.framesPerSecond || 0
-                        );
 
 
-                    recv.lost =
-                        r.packetsLost || 0;
 
 
 
-                    lastRecvBytes =
-                        r.bytesReceived;
 
-                }
+                    if (
+                        report.type === "inbound-rtp"
+                        &&
+                        report.kind === "video"
+                    ) {
 
 
 
-            });
+                        const now =
+                            Date.now();
 
 
 
+                        const seconds =
+                            (
+                                now - lastTime
+                            ) / 1000;
 
-            lastTime =
-                now;
 
 
 
+                        recv.bitrate =
+                            Math.round(
+                                (
+                                    (
+                                        report.bytesReceived - lastRecv
+                                    )
+                                    * 8
+                                )
+                                /
+                                seconds
+                                /
+                                1000
+                            );
 
-            setStats({
 
-                send,
-                recv,
-                capture:stats.capture
 
-            });
 
+                        recv.fps =
+                            Math.round(
+                                report.framesPerSecond || 0
+                            );
 
 
-        },1000);
+
+
+                        recv.lost =
+                            report.packetsLost || 0;
+
+
+
+
+                        lastRecv =
+                            report.bytesReceived;
+
+
+                    }
+
+
+
+                });
+
+
+
+
+                lastTime =
+                    Date.now();
+
+
+
+
+
+                setStats(old => ({
+
+                    ...old,
+
+                    send,
+
+                    recv
+
+                }));
+
+
+
+            }, 1000);
+
 
     }
 
@@ -610,10 +707,10 @@ export default function App() {
 
         <div
             style={{
-                background:"#202225",
-                color:"white",
-                padding:30,
-                minHeight:"100vh"
+                background: "#202225",
+                color: "white",
+                padding: 30,
+                minHeight: "100vh"
             }}
         >
 
@@ -623,17 +720,14 @@ export default function App() {
             </h1>
 
 
-
             <button onClick={start}>
                 Entrar llamada
             </button>
-
-
-
-            <button onClick={shareScreen}>
-                Compartir pantalla
+            <button
+                onClick={shareScreen}
+            >
+                Compartir pantalla 60FPS
             </button>
-
 
 
 
@@ -645,13 +739,21 @@ export default function App() {
 
 
             <video
+
                 ref={remoteVideo}
+
                 autoPlay
+
                 playsInline
+
                 style={{
-                    width:"800px",
-                    background:"black"
+
+                    width: "800px",
+
+                    background: "black"
+
                 }}
+
             />
 
 
@@ -664,7 +766,6 @@ export default function App() {
             />
 
 
-
             <audio
                 ref={remoteAudio}
                 autoPlay
@@ -674,28 +775,24 @@ export default function App() {
 
 
 
-
-            <hr/>
+            <hr />
 
 
 
 
             <h2>
-                Enviando
+                📤 Enviando
             </h2>
-
 
             <p>
                 Bitrate:
                 {stats.send.bitrate} kbps
             </p>
 
-
             <p>
                 FPS:
                 {stats.send.fps}
             </p>
-
 
             <p>
                 Perdidos:
@@ -707,21 +804,18 @@ export default function App() {
 
 
             <h2>
-                Recibiendo
+                📥 Recibiendo
             </h2>
-
 
             <p>
                 Bitrate:
                 {stats.recv.bitrate} kbps
             </p>
 
-
             <p>
                 FPS:
                 {stats.recv.fps}
             </p>
-
 
             <p>
                 Perdidos:
@@ -739,6 +833,7 @@ export default function App() {
 
             <p>
                 Resolución:
+                {" "}
                 {stats.capture.width}
                 x
                 {stats.capture.height}
@@ -747,8 +842,10 @@ export default function App() {
 
             <p>
                 FPS captura:
+                {" "}
                 {stats.capture.fps}
             </p>
+
 
 
         </div>
