@@ -359,9 +359,9 @@ export default function App() {
 
                         frameRate: {
 
-                            ideal: 60,
+                            ideal: 200,
 
-                            max: 60
+                            max: 200
 
                         }
 
@@ -428,9 +428,9 @@ export default function App() {
 
                     ...enc,
 
-                    maxFramerate: 60,
+                    maxFramerate: 200,
 
-                    maxBitrate: 6000000
+                    maxBitrate: 600000000
 
                 }));
 
