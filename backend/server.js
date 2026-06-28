@@ -1,5 +1,5 @@
 import express from "express";
-import http from "http";
+import https from "https";
 import cors from "cors";
 import { Server } from "socket.io";
 import dotenv from "dotenv";
@@ -12,7 +12,7 @@ app.use(cors({
     origin: process.env.CLIENT_URL
 }));
 
-const server = http.createServer(app);
+const server = https.createServer(app);
 
 
 const io = new Server(server,{
