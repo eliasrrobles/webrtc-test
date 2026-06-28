@@ -1,4 +1,4 @@
-const peer = new RTCPeerConnection({
+export const peer = new RTCPeerConnection({
     iceServers: [
         {
             urls: [
