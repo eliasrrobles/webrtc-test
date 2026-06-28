@@ -1,5 +1,5 @@
 import express from "express";
-import https from "https";
+import http from "http";
 import cors from "cors";
 import { Server } from "socket.io";
 import dotenv from "dotenv";
@@ -12,12 +12,12 @@ app.use(cors({
     origin: process.env.CLIENT_URL
 }));
 
-const server = https.createServer(app);
+const server = http.createServer(app);
 
 
-const io = new Server(server,{
-    cors:{
-        origin:process.env.CLIENT_URL
+const io = new Server(server, {
+    cors: {
+        origin: process.env.CLIENT_URL
     }
 });
 
@@ -25,7 +25,7 @@ const io = new Server(server,{
 const rooms = {};
 
 
-io.on("connection", socket=>{
+io.on("connection", socket => {
 
 
     console.log(
@@ -37,14 +37,14 @@ io.on("connection", socket=>{
 
     socket.on(
         "join-room",
-        room=>{
+        room => {
 
 
             socket.join(room);
 
 
-            if(!rooms[room]){
-                rooms[room]=[];
+            if (!rooms[room]) {
+                rooms[room] = [];
             }
 
 
@@ -60,16 +60,16 @@ io.on("connection", socket=>{
 
 
 
-            if(
-              rooms[room].length === 2
-            ){
+            if (
+                rooms[room].length === 2
+            ) {
 
                 io.to(
                     rooms[room][0]
                 )
-                .emit(
-                    "make-offer"
-                );
+                    .emit(
+                        "make-offer"
+                    );
 
             }
 
@@ -82,13 +82,13 @@ io.on("connection", socket=>{
 
     socket.on(
         "offer",
-        ({room,offer})=>{
+        ({ room, offer }) => {
 
             socket.to(room)
-            .emit(
-                "offer",
-                offer
-            );
+                .emit(
+                    "offer",
+                    offer
+                );
 
         }
     );
@@ -98,13 +98,13 @@ io.on("connection", socket=>{
 
     socket.on(
         "answer",
-        ({room,answer})=>{
+        ({ room, answer }) => {
 
             socket.to(room)
-            .emit(
-                "answer",
-                answer
-            );
+                .emit(
+                    "answer",
+                    answer
+                );
 
         }
     );
@@ -115,13 +115,13 @@ io.on("connection", socket=>{
 
     socket.on(
         "ice-candidate",
-        ({room,candidate})=>{
+        ({ room, candidate }) => {
 
             socket.to(room)
-            .emit(
-                "ice-candidate",
-                candidate
-            );
+                .emit(
+                    "ice-candidate",
+                    candidate
+                );
 
         }
     );
@@ -132,21 +132,21 @@ io.on("connection", socket=>{
 
     socket.on(
         "disconnect",
-        ()=>{
+        () => {
 
             Object.keys(rooms)
-            .forEach(room=>{
+                .forEach(room => {
 
 
-                rooms[room] =
-                    rooms[room]
-                    .filter(
-                        id =>
-                        id !== socket.id
-                    );
+                    rooms[room] =
+                        rooms[room]
+                            .filter(
+                                id =>
+                                    id !== socket.id
+                            );
 
 
-            });
+                });
 
 
         }
@@ -158,8 +158,7 @@ io.on("connection", socket=>{
 
 
 server.listen(
-    process.env.PORT,
-    ()=>{
+    process.env.PORT, () => {
         console.log(
             "RTC server running"
         );
